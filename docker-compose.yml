@@ -1,0 +1,9 @@
+services:
+  employee-directory:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      # Any property in application.properties can be overridden via environment variables.
+      DIRECTORY_MAXSKILLSPEREMPLOYEE: "10"
+      PAGINATION_DEFAULTPAGESIZE: "20"

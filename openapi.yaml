@@ -1,0 +1,775 @@
+openapi: 3.0.3
+info:
+  title: Employee Directory API
+  description: >
+    Internal employee directory. Employees belong to one department and can hold multiple skills.
+    List endpoints are paginated and sortable; employee search supports several optional filters.
+  version: 1.0.0
+servers:
+  - url: https://localhost:8443
+    description: Local development
+tags:
+  - name: Departments
+  - name: Skills
+  - name: Employees
+  - name: Info
+
+paths:
+  /api/info:
+    get:
+      tags: [Info]
+      summary: Application info and active configuration
+      operationId: getInfo
+      responses:
+        '200':
+          description: Values read from application.properties
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Info'
+
+  /api/departments:
+    post:
+      tags: [Departments]
+      summary: Create a department
+      operationId: createDepartment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepartmentRequest'
+      responses:
+        '201':
+          description: Department created
+          headers:
+            Location:
+              description: URL of the new department
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    get:
+      tags: [Departments]
+      summary: List departments (paged)
+      operationId: listDepartments
+      parameters:
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/SortDepartments'
+      responses:
+        '200':
+          description: A page of departments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DepartmentPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/departments/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Departments]
+      summary: Get a department by ID
+      operationId: getDepartment
+      responses:
+        '200':
+          description: The department, including computed headCount
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Departments]
+      summary: Update a department
+      operationId: updateDepartment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepartmentRequest'
+      responses:
+        '200':
+          description: Updated department
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      tags: [Departments]
+      summary: Delete a department
+      description: Rejected with 409 while the department still has employees.
+      operationId: deleteDepartment
+      responses:
+        '204':
+          description: Deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /api/departments/{id}/employees:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Departments]
+      summary: List all employees in a department (paged)
+      operationId: listDepartmentEmployees
+      parameters:
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/SortEmployees'
+      responses:
+        '200':
+          description: A page of employees
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeePage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/skills:
+    post:
+      tags: [Skills]
+      summary: Create a skill
+      operationId: createSkill
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SkillRequest'
+      responses:
+        '201':
+          description: Skill created
+          headers:
+            Location:
+              description: URL of the new skill
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Skill'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    get:
+      tags: [Skills]
+      summary: List skills (paged)
+      operationId: listSkills
+      parameters:
+        - name: category
+          in: query
+          description: Case-insensitive category filter, e.g. Backend
+          schema:
+            type: string
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/SortSkills'
+      responses:
+        '200':
+          description: A page of skills
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkillPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/skills/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Skills]
+      summary: Get a skill by ID
+      operationId: getSkill
+      responses:
+        '200':
+          description: The skill
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Skill'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Skills]
+      summary: Update a skill
+      operationId: updateSkill
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SkillRequest'
+      responses:
+        '200':
+          description: Updated skill
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Skill'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      tags: [Skills]
+      summary: Delete a skill
+      description: Rejected with 409 while the skill is assigned to any employee.
+      operationId: deleteSkill
+      responses:
+        '204':
+          description: Deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /api/employees:
+    post:
+      tags: [Employees]
+      summary: Create an employee
+      description: >
+        `skillIds` is optional. The number of skills may not exceed `directory.max-skills-per-employee`.
+        Email is stored lower-cased and must be unique (case-insensitive).
+      operationId: createEmployee
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeRequest'
+      responses:
+        '201':
+          description: Employee created
+          headers:
+            Location:
+              description: URL of the new employee
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/BusinessRule'
+    get:
+      tags: [Employees]
+      summary: Search / list employees (paged)
+      description: All supplied filters are combined with AND.
+      operationId: searchEmployees
+      parameters:
+        - name: departmentId
+          in: query
+          description: Only employees in this department
+          schema:
+            type: integer
+            format: int64
+        - name: skillId
+          in: query
+          description: Only employees holding this skill
+          schema:
+            type: integer
+            format: int64
+        - name: skill
+          in: query
+          description: Only employees holding a skill with this name (case-insensitive)
+          schema:
+            type: string
+        - name: designation
+          in: query
+          description: Exact designation, case-insensitive
+          schema:
+            type: string
+        - name: name
+          in: query
+          description: Case-insensitive "contains" match on employee name
+          schema:
+            type: string
+        - name: joinedAfter
+          in: query
+          description: Joining date on or after (ISO-8601 date)
+          schema:
+            type: string
+            format: date
+        - name: joinedBefore
+          in: query
+          description: Joining date on or before (ISO-8601 date)
+          schema:
+            type: string
+            format: date
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/SortEmployees'
+      responses:
+        '200':
+          description: A page of employees
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeePage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/employees/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Employees]
+      summary: Get an employee by ID, with skills
+      operationId: getEmployee
+      responses:
+        '200':
+          description: The employee
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Employees]
+      summary: Update an employee
+      description: >
+        Full update. If `skillIds` is omitted/null the employee's skills are left unchanged;
+        if provided, the skill set is replaced.
+      operationId: updateEmployee
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeRequest'
+      responses:
+        '200':
+          description: Updated employee
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/BusinessRule'
+    delete:
+      tags: [Employees]
+      summary: Delete an employee
+      operationId: deleteEmployee
+      responses:
+        '204':
+          description: Deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/employees/{id}/skills/{skillId}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+      - name: skillId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    post:
+      tags: [Employees]
+      summary: Add a skill to an employee
+      description: >
+        409 if the employee already has the skill; 422 if the employee is already at
+        `directory.max-skills-per-employee`.
+      operationId: addSkillToEmployee
+      responses:
+        '200':
+          description: The updated employee
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/BusinessRule'
+    delete:
+      tags: [Employees]
+      summary: Remove a skill from an employee
+      description: 404 if the employee does not currently have that skill.
+      operationId: removeSkillFromEmployee
+      responses:
+        '200':
+          description: The updated employee
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+    Offset:
+      name: offset
+      in: query
+      description: Number of rows to skip
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    Limit:
+      name: limit
+      in: query
+      description: Max rows to return. Server default is `pagination.default-page-size`; max is `pagination.max-page-size`.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    SortDepartments:
+      name: sort
+      in: query
+      description: Sort order (field,direction)
+      schema:
+        type: string
+        default: "name,asc"
+        enum:
+          - "name,asc"
+          - "name,desc"
+          - "location,asc"
+          - "location,desc"
+          - "id,asc"
+          - "id,desc"
+    SortSkills:
+      name: sort
+      in: query
+      description: Sort order (field,direction)
+      schema:
+        type: string
+        default: "name,asc"
+        enum:
+          - "name,asc"
+          - "name,desc"
+          - "category,asc"
+          - "category,desc"
+          - "id,asc"
+          - "id,desc"
+    SortEmployees:
+      name: sort
+      in: query
+      description: Sort order (field,direction)
+      schema:
+        type: string
+        default: "name,asc"
+        enum:
+          - "name,asc"
+          - "name,desc"
+          - "email,asc"
+          - "email,desc"
+          - "designation,asc"
+          - "designation,desc"
+          - "joiningDate,asc"
+          - "joiningDate,desc"
+          - "id,asc"
+          - "id,desc"
+
+  responses:
+    BadRequest:
+      description: Invalid query parameter (paging, sorting, type mismatch)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ValidationError:
+      description: Request body failed validation or could not be parsed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            timestamp: "2025-01-15T10:15:30.123Z"
+            status: 400
+            error: Bad Request
+            message: Validation failed
+            path: /api/employees
+            fieldErrors:
+              - field: email
+                message: email must be a valid address
+    NotFound:
+      description: Referenced resource does not exist
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            timestamp: "2025-01-15T10:15:30.123Z"
+            status: 404
+            error: Not Found
+            message: Employee with id 42 not found
+            path: /api/employees/42
+    Conflict:
+      description: Duplicate unique value, or the operation would break referential integrity
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BusinessRule:
+      description: Well-formed request that violates a configured business rule (e.g. max skills per employee)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            timestamp: "2025-01-15T10:15:30.123Z"
+            status: 422
+            error: Unprocessable Entity
+            message: Employee 7 already has the maximum of 10 skills
+            path: /api/employees/7/skills/3
+
+  schemas:
+    Info:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Employee Directory Service
+        version:
+          type: string
+          example: 1.0.0
+        maxSkillsPerEmployee:
+          type: integer
+          example: 10
+        defaultPageSize:
+          type: integer
+          example: 20
+
+    DepartmentRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          example: Engineering
+        location:
+          type: string
+          maxLength: 150
+          nullable: true
+          example: Bengaluru
+    Department:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: Engineering
+        location:
+          type: string
+          nullable: true
+          example: Bengaluru
+        headCount:
+          type: integer
+          format: int64
+          description: Number of employees currently in the department (computed)
+          example: 12
+
+    SkillRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          example: Java
+        category:
+          type: string
+          maxLength: 100
+          nullable: true
+          example: Backend
+    Skill:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: Java
+        category:
+          type: string
+          nullable: true
+          example: Backend
+
+    EmployeeRequest:
+      type: object
+      required: [name, email, joiningDate, departmentId]
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          example: Asha Rao
+        email:
+          type: string
+          format: email
+          maxLength: 150
+          example: asha.rao@corp.com
+        designation:
+          type: string
+          maxLength: 100
+          nullable: true
+          example: Engineer
+        joiningDate:
+          type: string
+          format: date
+          example: "2023-04-01"
+        departmentId:
+          type: integer
+          format: int64
+          example: 1
+        skillIds:
+          type: array
+          uniqueItems: true
+          nullable: true
+          items:
+            type: integer
+            format: int64
+          example: [1, 2]
+    Employee:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        designation:
+          type: string
+          nullable: true
+        joiningDate:
+          type: string
+          format: date
+        departmentId:
+          type: integer
+          format: int64
+        departmentName:
+          type: string
+        skills:
+          type: array
+          items:
+            $ref: '#/components/schemas/Skill'
+
+    PageMeta:
+      type: object
+      properties:
+        offset:
+          type: integer
+          format: int64
+          description: Rows skipped
+        limit:
+          type: integer
+          description: Max rows requested
+        totalElements:
+          type: integer
+          format: int64
+        hasNext:
+          type: boolean
+    DepartmentPage:
+      allOf:
+        - $ref: '#/components/schemas/PageMeta'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/Department'
+    SkillPage:
+      allOf:
+        - $ref: '#/components/schemas/PageMeta'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/Skill'
+    EmployeePage:
+      allOf:
+        - $ref: '#/components/schemas/PageMeta'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/Employee'
+
+    Error:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        error:
+          type: string
+        message:
+          type: string
+        path:
+          type: string
+        fieldErrors:
+          type: array
+          description: Present only for body validation failures
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
